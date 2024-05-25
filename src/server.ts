@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import axios from "axios";
 import { LRUCache } from "./lru-cache";
 import {
@@ -11,9 +11,16 @@ import {
 const app = express();
 const port = 3000;
 
+interface ExchangeRates {
+  rates: {
+    [key: string]: number;
+  };
+}
 const cache = new LRUCache<string, any>(5);
 
-const fetchExchangeRates = async (baseCurrency: string): Promise<any> => {
+const fetchExchangeRates = async (
+  baseCurrency: string
+): Promise<ExchangeRates> => {
   try {
     const response = await axios.get(
       `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`
@@ -27,16 +34,23 @@ const fetchExchangeRates = async (baseCurrency: string): Promise<any> => {
   }
 };
 
-const getExchangeRates = async (baseCurrency: string): Promise<any> => {
-  //   if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
-  //     return cache.get(EXCHANGE_RATES_KEY);
-  //   } else {
-  console.log("here");
-  return fetchExchangeRates(baseCurrency);
-  //   }
+const getExchangeRates = async (
+  baseCurrency: string
+): Promise<ExchangeRates> => {
+  if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
+    return cache.get(EXCHANGE_RATES_KEY);
+  } else {
+    return fetchExchangeRates(baseCurrency);
+  }
 };
 
-app.get("/quote", async (req, res) => {
+interface QuoteParams {
+  baseCurrency: string;
+  quoteCurrency: string;
+  baseAmount: number;
+}
+
+app.get("/quote", async (req: Request<{}, {}, {}, QuoteParams>, res) => {
   const { baseCurrency, quoteCurrency, baseAmount } = req.query;
   console.log(req.query);
 
@@ -45,15 +59,15 @@ app.get("/quote", async (req, res) => {
   }
 
   if (
-    !SUPPORTED_CURRENCIES.includes(baseCurrency as string) ||
-    !SUPPORTED_CURRENCIES.includes(quoteCurrency as string) // todo: type query params
+    !SUPPORTED_CURRENCIES.includes(baseCurrency) ||
+    !SUPPORTED_CURRENCIES.includes(quoteCurrency)
   ) {
     return res.status(400).json({ error: "Unsupported currency" });
   }
 
   try {
-    const exchangeRates = await getExchangeRates(baseCurrency as string);
-    const rate = exchangeRates.rates[quoteCurrency as string];
+    const exchangeRates = await getExchangeRates(baseCurrency);
+    const rate = exchangeRates.rates[quoteCurrency];
 
     if (!rate) {
       return res.status(400).json({ error: "Invalid currency conversion" });
@@ -76,6 +90,5 @@ app.listen(port, () => {
 });
 
 // todo:
-// add types
 // add tests
 // add fake frontend
