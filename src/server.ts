@@ -13,10 +13,13 @@ const port = 3000;
 
 const cache = new LRUCache<string, any>(5);
 
-const fetchExchangeRates = async (): Promise<any> => {
+const fetchExchangeRates = async (baseCurrency: string): Promise<any> => {
   try {
-    const response = await axios.get(EXCHANGE_API_URL);
+    const response = await axios.get(
+      `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`
+    );
     cache.put(EXCHANGE_RATES_KEY, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error fetching exchange rates:", error);
@@ -24,12 +27,13 @@ const fetchExchangeRates = async (): Promise<any> => {
   }
 };
 
-const getExchangeRates = async (): Promise<any> => {
-  if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
-    return cache.get(EXCHANGE_RATES_KEY);
-  } else {
-    return fetchExchangeRates();
-  }
+const getExchangeRates = async (baseCurrency: string): Promise<any> => {
+  //   if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
+  //     return cache.get(EXCHANGE_RATES_KEY);
+  //   } else {
+  console.log("here");
+  return fetchExchangeRates(baseCurrency);
+  //   }
 };
 
 app.get("/quote", async (req, res) => {
@@ -42,16 +46,14 @@ app.get("/quote", async (req, res) => {
 
   if (
     !SUPPORTED_CURRENCIES.includes(baseCurrency as string) ||
-    !SUPPORTED_CURRENCIES.includes(quoteCurrency as string) // todo: check
+    !SUPPORTED_CURRENCIES.includes(quoteCurrency as string) // todo: type query params
   ) {
     return res.status(400).json({ error: "Unsupported currency" });
   }
 
   try {
-    const exchangeRates = await getExchangeRates();
-    const rate =
-      exchangeRates.rates[quoteCurrency as string] /
-      exchangeRates.rates[baseCurrency as string];
+    const exchangeRates = await getExchangeRates(baseCurrency as string);
+    const rate = exchangeRates.rates[quoteCurrency as string];
 
     if (!rate) {
       return res.status(400).json({ error: "Invalid currency conversion" });
@@ -72,3 +74,8 @@ app.get("/quote", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
+
+// todo:
+// add types
+// add tests
+// add fake frontend
