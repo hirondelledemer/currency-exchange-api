@@ -26,7 +26,6 @@ const fetchExchangeRates = async (
       `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`
     );
     cache.put(EXCHANGE_RATES_KEY, response.data);
-
     return response.data;
   } catch (error) {
     console.error("Error fetching exchange rates:", error);
@@ -37,11 +36,11 @@ const fetchExchangeRates = async (
 const getExchangeRates = async (
   baseCurrency: string
 ): Promise<ExchangeRates> => {
-  if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
-    return cache.get(EXCHANGE_RATES_KEY);
-  } else {
-    return fetchExchangeRates(baseCurrency);
-  }
+  //   if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
+  // return cache.get(EXCHANGE_RATES_KEY);
+  //   } else {
+  return fetchExchangeRates(baseCurrency);
+  //   }
 };
 
 interface QuoteParams {
@@ -52,7 +51,6 @@ interface QuoteParams {
 
 app.get("/quote", async (req: Request<{}, {}, {}, QuoteParams>, res) => {
   const { baseCurrency, quoteCurrency, baseAmount } = req.query;
-  console.log(req.query);
 
   if (!baseCurrency || !quoteCurrency || !baseAmount) {
     return res.status(400).json({ error: "Missing required query parameters" });
@@ -68,11 +66,6 @@ app.get("/quote", async (req: Request<{}, {}, {}, QuoteParams>, res) => {
   try {
     const exchangeRates = await getExchangeRates(baseCurrency);
     const rate = exchangeRates.rates[quoteCurrency];
-
-    if (!rate) {
-      return res.status(400).json({ error: "Invalid currency conversion" });
-    }
-
     const exchangeRate = parseFloat(rate.toFixed(3));
     const quoteAmount = Math.round((Number(baseAmount) / 100) * rate * 100);
 
@@ -89,6 +82,4 @@ app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
 
-// todo:
-// add tests
-// add fake frontend
+export default app;
