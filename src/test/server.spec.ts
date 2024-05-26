@@ -2,7 +2,7 @@ import chai, { expect } from "chai";
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import chaiHttp from "chai-http";
-import app from "../server";
+import app from "..";
 import sinon from "sinon";
 import { LRUCache } from "../lru-cache";
 
