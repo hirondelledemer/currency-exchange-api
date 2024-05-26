@@ -1,11 +1,11 @@
 import express, { Request } from "express";
 import axios from "axios";
-import { LRUCache } from "../lru-cache";
+import { LRUCache } from "./lru-cache";
 import {
   CACHE_TIMEOUT,
   EXCHANGE_RATES_KEY,
   SUPPORTED_CURRENCIES,
-} from "../utils/consts";
+} from "./utils/consts";
 
 const app = express();
 const port = 3000;
