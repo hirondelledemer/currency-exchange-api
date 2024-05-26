@@ -1,9 +1,8 @@
-import express, { Request, Response } from "express";
+import express, { Request } from "express";
 import axios from "axios";
 import { LRUCache } from "./lru-cache";
 import {
   CACHE_TIMEOUT,
-  EXCHANGE_API_URL,
   EXCHANGE_RATES_KEY,
   SUPPORTED_CURRENCIES,
 } from "./utils/consts";
@@ -11,12 +10,14 @@ import {
 const app = express();
 const port = 3000;
 
+type Currency = (typeof SUPPORTED_CURRENCIES)[number];
+
 interface ExchangeRates {
   rates: {
-    [key: string]: number;
+    [key in Currency]: number;
   };
 }
-const cache = new LRUCache<string, any>(5);
+const cache = new LRUCache<string, ExchangeRates>(5);
 
 const fetchExchangeRates = async (
   baseCurrency: string
@@ -35,7 +36,7 @@ const fetchExchangeRates = async (
 
 const getExchangeRates = async (
   baseCurrency: string
-): Promise<ExchangeRates> => {
+): Promise<ExchangeRates | undefined> => {
   if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
     return cache.get(EXCHANGE_RATES_KEY);
   } else {
@@ -44,8 +45,8 @@ const getExchangeRates = async (
 };
 
 interface QuoteParams {
-  baseCurrency: string;
-  quoteCurrency: string;
+  baseCurrency: Currency;
+  quoteCurrency: Currency;
   baseAmount: number;
 }
 
@@ -65,7 +66,7 @@ app.get("/quote", async (req: Request<{}, {}, {}, QuoteParams>, res) => {
 
   try {
     const exchangeRates = await getExchangeRates(baseCurrency);
-    const rate = exchangeRates.rates[quoteCurrency];
+    const rate = exchangeRates!.rates[quoteCurrency];
     const exchangeRate = parseFloat(rate.toFixed(3));
     const quoteAmount = Math.round((Number(baseAmount) / 100) * rate * 100);
 
