@@ -34,6 +34,21 @@ describe("/quote", () => {
           done();
         });
     });
+
+    it("should return server error", (done) => {
+      mock.onGet("https://api.exchangerate-api.com/v4/latest/EUR").reply(400);
+
+      chai
+        .request(app)
+        .get("/quote?quoteCurrency=USD&baseCurrency=EUR&baseAmount=1000")
+        .end((_err, res) => {
+          expect(res.statusCode).to.equal(500);
+          expect(res.body).to.deep.equal({
+            error: "Internal server error",
+          });
+          done();
+        });
+    });
   });
 
   it("should return exchange rate", (done) => {

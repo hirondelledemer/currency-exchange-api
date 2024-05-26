@@ -36,11 +36,11 @@ const fetchExchangeRates = async (
 const getExchangeRates = async (
   baseCurrency: string
 ): Promise<ExchangeRates> => {
-  //   if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
-  // return cache.get(EXCHANGE_RATES_KEY);
-  //   } else {
-  return fetchExchangeRates(baseCurrency);
-  //   }
+  if (cache.isValid(EXCHANGE_RATES_KEY, CACHE_TIMEOUT)) {
+    return cache.get(EXCHANGE_RATES_KEY);
+  } else {
+    return fetchExchangeRates(baseCurrency);
+  }
 };
 
 interface QuoteParams {
