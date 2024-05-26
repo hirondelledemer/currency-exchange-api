@@ -3,12 +3,18 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import chaiHttp from "chai-http";
 import app from "../server";
+import sinon from "sinon";
+import { LRUCache } from "../lru-cache";
 
 chai.use(chaiHttp);
 
 const mock = new MockAdapter(axios);
 
 describe("/quote", () => {
+  beforeEach(() => {
+    mock.reset();
+  });
+
   describe("errors", () => {
     it('should return "missing params" error', (done) => {
       chai
@@ -36,6 +42,7 @@ describe("/quote", () => {
     });
 
     it("should return server error", (done) => {
+      sinon.stub(LRUCache.prototype, "isValid").returns(false);
       mock.onGet("https://api.exchangerate-api.com/v4/latest/EUR").reply(400);
 
       chai
